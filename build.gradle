@@ -1,0 +1,89 @@
+group = 'github.etx.neo4j'
+version = "0.0.1"
+
+buildscript {
+    ext.kotlin_version = '1.0.6'
+
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath group: 'org.junit.platform', name: 'junit-platform-gradle-plugin', version: '1.0.0-M3'
+    }
+}
+
+apply plugin: "idea"
+apply plugin: 'kotlin'
+apply plugin: "org.junit.platform.gradle.plugin"
+apply plugin: 'maven-publish'
+
+
+junitPlatform {
+    filters {
+        engines {
+            include 'junit-jupiter'
+        }
+        includeClassNamePattern '.*Spec'
+        includeClassNamePatterns '.*Test', '.*IT'
+    }
+}
+
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    compile 'org.slf4j:slf4j-api:1.7.21'
+
+    //neo4j
+    compile 'org.neo4j.driver:neo4j-java-driver:1.1.1'
+
+    //junit5
+    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testCompile("org.junit.jupiter:junit-jupiter-api:5.0.0-M3")
+    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.0.0-M3")
+
+    testCompile "com.etx.test:kotlin-random:1.0.0"
+
+    testCompile 'io.github.microutils:kotlin-logging:1.4'
+    testCompile group: 'ch.qos.logback', name: 'logback-core', version: '1.1.7'
+    testCompile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.7'
+    testCompile "org.neo4j:neo4j-slf4j:3.1.0"
+    testCompile "org.neo4j.test:neo4j-harness:3.1.0"
+
+    testCompile "com.fasterxml.jackson.module:jackson-module-kotlin:2.8.4"
+}
+
+//task sourceJar(type: Jar, dependsOn: classes) {
+//    classifier = 'sources'
+//    from sourceSets.main.allSource
+//}
+//task javadocJar(type: Jar) {
+//    classifier = 'javadoc'
+//    from javadoc
+//}
+//
+//artifacts {
+//    archives sourcesJar, javadocJar
+//}
+//
+//publishing {
+//    publications {
+//        mavenJava(MavenPublication) {
+//            from components.java
+//            groupId project.group
+//            artifactId project.name
+//            artifact sourcesJar
+//            artifact javadocJar
+//        }
+//    }
+//}
