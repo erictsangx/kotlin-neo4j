@@ -5,6 +5,19 @@ kotlin-neo4j is a wrapper of 'org.neo4j.driver:neo4j-java-driver' and written by
 * **Kotlin std naming styles:** stringOrNull, int("key")
 * **Support Sl4j Logger**
 
+## Gradle
+```gradle
+compile "io.github.erictsangx:kotlin-neo4j:0.0.1"
+```
+
+## Maven
+```maven
+<dependency>
+  <groupId>io.github.erictsangx</groupId>
+  <artifactId>kotlin-neo4j</artifactId>
+  <version>0.0.1</version>
+</dependency>
+```
 ## Examples
 
 ```kotlin

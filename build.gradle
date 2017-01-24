@@ -1,5 +1,3 @@
-group = 'github.etx.neo4j'
-version = "0.0.1"
 
 buildscript {
     ext.kotlin_version = '1.0.6'
@@ -14,11 +12,16 @@ buildscript {
     }
 }
 
-apply plugin: "idea"
+apply plugin: 'idea'
 apply plugin: 'kotlin'
-apply plugin: "org.junit.platform.gradle.plugin"
-apply plugin: 'maven-publish'
+apply plugin: 'org.junit.platform.gradle.plugin'
 
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+group = 'io.github.erictsangx'
+archivesBaseName = "kotlin-neo4j"
+version = "0.0.1"
 
 junitPlatform {
     filters {
@@ -30,9 +33,6 @@ junitPlatform {
     }
 }
 
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
 
 repositories {
     jcenter()
@@ -63,27 +63,66 @@ dependencies {
     testCompile "com.fasterxml.jackson.module:jackson-module-kotlin:2.8.4"
 }
 
-//task sourceJar(type: Jar, dependsOn: classes) {
-//    classifier = 'sources'
-//    from sourceSets.main.allSource
-//}
-//task javadocJar(type: Jar) {
-//    classifier = 'javadoc'
-//    from javadoc
-//}
-//
-//artifacts {
-//    archives sourcesJar, javadocJar
-//}
-//
-//publishing {
-//    publications {
-//        mavenJava(MavenPublication) {
-//            from components.java
-//            groupId project.group
-//            artifactId project.name
-//            artifact sourcesJar
-//            artifact javadocJar
-//        }
-//    }
-//}
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives sourcesJar, javadocJar
+}
+
+signing {
+    sign configurations.archives
+}
+
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            pom.project {
+                name  "${project.group}:${project.archivesBaseName}"
+                packaging 'jar'
+                description "kotlin-neo4j is a wrapper of 'org.neo4j.driver:neo4j-java-driver' and written by Kotlin."
+                url "https://github.com/erictsangx/kotlin-neo4j"
+
+                scm {
+                    connection 'scm:git:git://github.com/erictsangx/kotlin-neo4j.git'
+                    developerConnection 'scm:git:ssh://github.com/erictsangx/kotlin-neo4j.git'
+                    url 'https://github.com/erictsangx/kotlin-neo4j'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'erictsangx'
+                        name 'Eric Tsang'
+                        email 'erictsangx@gmail.com'
+                    }
+                }
+            }
+        }
+    }
+}
+

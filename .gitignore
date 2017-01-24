@@ -101,3 +101,4 @@ gradle-app.setting
 
 
 .idea
+gradle.properties
