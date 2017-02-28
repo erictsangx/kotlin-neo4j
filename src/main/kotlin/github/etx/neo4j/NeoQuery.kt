@@ -1,10 +1,7 @@
 package github.etx.neo4j
 
 import org.neo4j.driver.internal.InternalRecord
-import org.neo4j.driver.internal.value.NullValue
 import org.neo4j.driver.v1.Driver
-import org.neo4j.driver.v1.Record
-import org.neo4j.driver.v1.Value
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.OffsetTime
@@ -48,15 +45,12 @@ class NeoQuery(private val driver: Driver) {
             val value = it.value
             when (value) {
                 null -> null
-                is Short, is Int, is Long, is Float, is Double -> value
-                is Char, is String -> value
-                is Boolean -> value
                 is OffsetTime -> serializeTime(value)
                 is OffsetDateTime -> serializeTime(value)
                 is Instant -> serializeTime(value)
                 is Enum<*> -> value.name
                 is Collection<*> -> transform(value)
-                else -> throw UnsupportedParameterTypeException("Unsupported type: ${value.javaClass.typeName} -> $value")
+                else -> value
             }
         }
     }
@@ -78,13 +72,11 @@ class NeoQuery(private val driver: Driver) {
         return list.map {
             when (it) {
                 null -> null
-                is Short, is Int, is Long, is Float, is Double -> it
-                is Char, is String -> it
-                is Boolean -> it
                 is OffsetTime -> serializeTime(it)
                 is OffsetDateTime -> serializeTime(it)
+                is Instant -> serializeTime(it)
                 is Enum<*> -> it.name
-                else -> throw UnsupportedParameterTypeException("Unsupported type: ${it.javaClass.typeName} -> $it")
+                else -> it
             }
         }
     }

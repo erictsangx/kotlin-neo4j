@@ -3,6 +3,7 @@ package github.etx.neo4j
 import com.etx.test.Rand
 import helper.Bar
 import helper.Foo
+import helper.Person
 import mu.KLogging
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -454,6 +455,33 @@ class NeoQueryTest {
             .single()
         assertEquals(mapOf("name" to nameA), result.first)
         assertNull(result.second)
+    }
+
+
+    @Test
+    fun complexParameter() {
+        val companyName = Rand.str
+        val people = (1..10).map { Person(Rand.str) }
+        subject
+            .submit("""
+                    MERGE (c:Company { name: {companyName} })
+                    WITH c
+                    UNWIND {people} AS person
+                    CREATE (c)<-[:WORK]-(p:Person)
+                    SET p=person
+                """, mapOf("companyName" to companyName, "people" to people.map(Person::destruct)))
+
+        val result = subject
+            .submit(
+                "MATCH (c:Company { name:{companyName} } )<-[:WORK]-(p:Person) RETURN p",
+                mapOf("companyName" to companyName)
+            )
+            .map { it.unwrap("p") }
+            .map(Cursor::asMap)
+            .map { Person(it["name"] as String) }
+            .toList()
+
+        assertEquals(people.sortedBy { it.name }, result.sortedBy { it.name })
     }
 
 }
