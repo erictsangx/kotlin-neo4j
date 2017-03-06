@@ -1,8 +1,7 @@
 package github.etx.neo4j
 
 import com.etx.test.Rand
-import helper.Bar
-import helper.Foo
+import helper.Gender
 import helper.Person
 import mu.KLogging
 import org.junit.jupiter.api.BeforeEach
@@ -39,10 +38,6 @@ class NeoQueryTest {
     val subject: NeoQuery = NeoQuery(driver)
 
 
-    val nameA = Rand.str
-    val nameB = Rand.str
-    val role = Rand.str
-
     init {
         TestGraphDatabaseFactory()
             .setUserLogProvider(Slf4jLogProvider())
@@ -56,6 +51,20 @@ class NeoQueryTest {
     }
 
 
+    val alice = Person(Rand.str, Rand.int, Gender.FEMALE)
+    val aliceKnowBob = Rand.pInstant
+    val bob = Person(Rand.str, Rand.int, Gender.MALE)
+    val candy = Person(Rand.str, Rand.int, Gender.FEMALE)
+
+    val insertQuery = """
+            CREATE (p:Person {
+            name:{name},
+            age:{age},
+            gender:{gender}
+            })
+            RETURN p
+            """
+
     @BeforeEach
     fun reset() {
         driver.session().let {
@@ -63,26 +72,33 @@ class NeoQueryTest {
             it.close()
         }
 
-        subject.submit("""
-                    CREATE (c:Company { name: {nameA} })<-[r:WORK { role: {role} }]-(p:Person { name: {nameB} })
-            """, mapOf("nameA" to nameA, "nameB" to nameB, "role" to role))
+
+        subject.submit(insertQuery, mapOf("name" to alice.name, "age" to alice.age, "gender" to alice.gender))
+        subject.submit(insertQuery, mapOf("name" to bob.name, "age" to bob.age, "gender" to bob.gender))
+        subject.submit(insertQuery, mapOf("name" to candy.name, "age" to candy.age, "gender" to candy.gender))
+
+
+        /**
+         * [alice]-KNOW->[bob]
+         */
+        val fdshipQuery = """
+        MATCH (a:Person {name: {nameA} })
+        MATCH (b:Person {name: {nameB} })
+        CREATE (a)-[r:KNOW]->(b)
+        SET r.since = {since}
+        """
+        subject.submit(fdshipQuery, mapOf("nameA" to alice.name, "nameB" to bob.name, "since" to aliceKnowBob))
     }
 
 
     @Test
     fun submit() {
-        val f = Foo(Rand.str, Rand.int)
-        val c = subject.submit("CREATE (n:Foo { name: {name}, age: {age} }) RETURN n",
-            mapOf("name" to f.name, "age" to f.age))
-        val result = c
-            .map {
-                it.unwrap("n")
-            }
-            .map {
-                Foo(it.string("name"), it.int("age"))
-            }
-            .toList()
-        assertEquals(listOf(f), result)
+        val p = Person(Rand.str, Rand.int, Gender.FEMALE)
+        val result = subject
+            .submit(insertQuery, mapOf("name" to p.name, "age" to p.age, "gender" to p.gender))
+            .unwrap("p")
+            .let { Person(it.string("name"), it.int("age"), Gender.valueOf(it.string("gender"))) }
+        assertEquals(p, result)
     }
 
     @Test
@@ -123,8 +139,8 @@ class NeoQueryTest {
     @Test
     fun serializeEnum() {
         val params = mapOf(
-            "a" to Bar.A,
-            "b" to Bar.B
+            "a" to Gender.MALE,
+            "b" to Gender.FEMALE
         )
 
         val result = subject.serialize(params)
@@ -377,65 +393,55 @@ class NeoQueryTest {
     fun relationship() {
         val result = subject
             .submit("""
-                    MATCH (c:Company)<-[r:WORK]-(p:Person)
+                    MATCH (a:Person)-[r:KNOW]->(b:Person)
                     RETURN r
                 """)
-            .map {
-                it.unwrap("r")
-            }
-            .map {
-                it.string("role")
-            }
+            .map { it.unwrap("r") }
+            .map { it.string("since") }
+            .map { Instant.parse(it) }
             .toList()
 
-        assertEquals(listOf(role), result)
+        assertEquals(listOf(aliceKnowBob), result)
     }
 
     @Test
     fun relationshipCollection() {
         val result = subject
             .submit("""
-                    MATCH (c:Company)<-[r:WORK]-(p:Person)
+                    MATCH (a:Person)-[r:KNOW]->(b:Person)
                     RETURN collect(r) as rows
                 """)
-            .map {
-                it.unwrap("rows")
-            }
+            .map { it.unwrap("rows") }
             .flatMap(Cursor::asSequence)
-            .map {
-                it.string("role")
-            }
+            .map { it.string("since") }
+            .map { Instant.parse(it) }
             .toList()
 
-        assertEquals(listOf(role), result)
+        assertEquals(listOf(aliceKnowBob), result)
     }
 
     @Test
     fun relationshipMap() {
         val result = subject
             .submit("""
-                    MATCH (c:Company)<-[r:WORK]-(p:Person)
-                    RETURN {person: p, role: r.role} as staff
+                    MATCH (:Person)-[r:KNOW]->(p:Person)
+                    RETURN {person: p, since: r.since} as fdship
                 """)
-            .map {
-                it.unwrap("staff")
-            }
-            .map {
-                it.unwrap("person").string("name") to it.string("role")
-            }
+            .map { it.unwrap("fdship") }
+            .map { it.unwrap("person").string("name") to Instant.parse(it.string("since")) }
             .toList()
 
-        assertEquals(listOf(nameB to role), result)
+        assertEquals(listOf(bob.name to aliceKnowBob), result)
     }
 
     @Test
     fun isNull() {
         val result = subject
             .submit("""
-                    MATCH (c:Company)
+                    MATCH (p:Person { name:{name} } )
                     OPTIONAL MATCH (c)-[:AAA]->(x:BBB)
-                    RETURN c,x
-                """)
+                    RETURN p,x
+                """, mapOf("name" to alice.name))
             .map { it.unwrap("x") }
             .map { it.isNull }
             .single()
@@ -444,47 +450,50 @@ class NeoQueryTest {
 
     @Test
     fun asMapOrNull() {
-        val result = subject
+        val (first, second) = subject
             .submit("""
-                    MATCH (c:Company { name: {nameA} })
-                    OPTIONAL MATCH (c)<-[r:WORK]-(p:Person { name: {nameB} })
-                    RETURN c,p
-                """, mapOf("nameA" to nameA, "nameB" to Rand.str))
-            .map { it.unwrap("c") to it.unwrap("p") }
-            .map {
-                val (company, person) = it
-                company.asMap() to person.asMapOrNull()
+                    MATCH (a:Person { name: {nameA} })
+                    OPTIONAL MATCH (a)-[r:KNOW]->(b:Person { name: {nameB} })
+                    RETURN a,b
+                """, mapOf("nameA" to alice.name, "nameB" to candy.name))
+            .map { it.unwrap("a") to it.unwrap("b") }
+            .map { (personA, personB) ->
+                personA.asMap() to personB.asMapOrNull()
             }
             .single()
-        assertEquals(mapOf("name" to nameA), result.first)
-        assertNull(result.second)
+
+        assertEquals(3, first.size)
+        assertEquals(alice.name, first["name"])
+        assertEquals(alice.age.toLong(), first["age"])
+        assertEquals(alice.gender.name, first["gender"])
+        assertNull(second)
     }
 
 
-    @Test
-    fun complexParameter() {
-        val companyName = Rand.str
-        val people = (1..10).map { Person(Rand.str) }
-        subject
-            .submit("""
-                    MERGE (c:Company { name: {companyName} })
-                    WITH c
-                    UNWIND {people} AS person
-                    CREATE (c)<-[:WORK]-(p:Person)
-                    SET p=person
-                """, mapOf("companyName" to companyName, "people" to people.map(Person::destruct)))
-
-        val result = subject
-            .submit(
-                "MATCH (c:Company { name:{companyName} } )<-[:WORK]-(p:Person) RETURN p",
-                mapOf("companyName" to companyName)
-            )
-            .map { it.unwrap("p") }
-            .map(Cursor::asMap)
-            .map { Person(it["name"] as String) }
-            .toList()
-
-        assertEquals(people.sortedBy { it.name }, result.sortedBy { it.name })
-    }
+//    @Test
+//    fun complexParameter() {
+//        val companyName = Rand.str
+//        val people = (1..10).map { Person(Rand.str) }
+//        subject
+//            .submit("""
+//                    MERGE (c:Company { name: {companyName} })
+//                    WITH c
+//                    UNWIND {people} AS person
+//                    CREATE (c)<-[:WORK]-(p:Person)
+//                    SET p=person
+//                """, mapOf("companyName" to companyName, "people" to people.destruct()))
+//
+//        val result = subject
+//            .submit(
+//                "MATCH (c:Company { name:{companyName} } )<-[:WORK]-(p:Person) RETURN p",
+//                mapOf("companyName" to companyName)
+//            )
+//            .map { it.unwrap("p") }
+//            .map(Cursor::asMap)
+//            .map { Person(it["name"] as String) }
+//            .toList()
+//
+//        assertEquals(people.sortedBy { it.name }, result.sortedBy { it.name })
+//    }
 
 }

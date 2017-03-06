@@ -1,24 +1,42 @@
 package github.etx.neo4j
 
 import com.etx.test.Rand
-import helper.Foo
-import org.junit.jupiter.api.DisplayName
+import helper.person
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 class NeoUtilTest {
     @Test
-    @DisplayName("should destruct object to map")
     fun destruct() {
-        val foo = Foo(name = Rand.str, age = Rand.int)
-        val result = foo.destruct()
+        val person = Rand.person
+        val result = person.destruct()
 
         assertEquals(
+            mapOf(
+                "name" to person.name,
+                "age" to person.age,
+                "gender" to person.gender
+            ),
+            result
+        )
+
+    }
+
+
+    @Test
+    fun destructCollection() {
+        val person = List(Rand.int(1, 10)) { Rand.person }
+        val result = person.destruct()
+
+        assertEquals(
+            person.map {
                 mapOf(
-                        Foo::name.name to foo.name,
-                        Foo::age.name to foo.age
-                ),
-                result
+                    "name" to it.name,
+                    "age" to it.age,
+                    "gender" to it.gender
+                )
+            },
+            result
         )
     }
 }

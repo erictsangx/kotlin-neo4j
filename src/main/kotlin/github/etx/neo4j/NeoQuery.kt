@@ -31,15 +31,14 @@ class NeoQuery(private val driver: Driver) {
         }
     }
 
-    fun serialize(parameters: Map<String, Any?>): Map<String, Any?> {
+    fun serialize(parameters: Map<String, *>): Map<String, *> {
         return parameters.mapValues {
             val value = it.value
-            if (value is Collection<*>) {
-                return@mapValues transform(value)
-            } else {
-                return@mapValues toNeo4jType(value)
+            return@mapValues when (value) {
+                is Collection<*> -> transform(value)
+                is Map<*, *> -> serialize(value as Map<String, *>)
+                else -> toNeo4jType(value)
             }
-
         }
     }
 
