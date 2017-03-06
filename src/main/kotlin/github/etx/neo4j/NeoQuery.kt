@@ -5,67 +5,55 @@ import org.neo4j.driver.v1.Driver
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.OffsetTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 
 /**
  * see [http://neo4j.com/docs/developer-manual/current/#driver-types] for supported type
- * Support:
- *  [Short], [Int], [Long], [Float], [Double]
- *  [Char], [String]
- *  [Boolean]
- *  [OffsetTime], [OffsetDateTime], [Instant]
- *  [Enum]
+ * It also support:
+ *  [OffsetTime], [OffsetDateTime], [ZonedDateTime] [Instant] (ISO8601)
+ *  [Enum] (Enum.name)
  *  [Collection]<Any type above>
- * @throws [UnsupportedParameterTypeException]
  */
 class NeoQuery(private val driver: Driver) {
 
     fun submit(query: String, parameters: Map<String, Any?> = mapOf()): CursorWrapper {
         val session = driver.session()
 
-        //TODO: kotlin 1.1 add support [AutoClosable].use
-        return try {
-            val sr = session.run(query, serialize(parameters))
-            if (sr.hasNext()) {
-                CursorWrapper(sr.peek(), sr)
+        return session.use {
+            val statementResult = session.run(query, serialize(parameters))
+            if (statementResult.hasNext()) {
+                CursorWrapper(statementResult.peek(), statementResult)
             } else {
-                CursorWrapper(InternalRecord(listOf(), arrayOf()), sr)
+                CursorWrapper(InternalRecord(listOf(), arrayOf()), statementResult)
             }
-        } catch(e: Exception) {
-            throw e
-        } finally {
-            session.close()
         }
     }
-
 
     fun serialize(parameters: Map<String, Any?>): Map<String, Any?> {
         return parameters.mapValues {
             val value = it.value
-            when (value) {
-                null -> null
-                is OffsetTime -> serializeTime(value)
-                is OffsetDateTime -> serializeTime(value)
-                is Instant -> serializeTime(value)
-                is Enum<*> -> value.name
-                is Collection<*> -> transform(value)
-                else -> value
+            if (value is Collection<*>) {
+                return@mapValues transform(value)
+            } else {
+                return@mapValues toNeo4jType(value)
             }
+
         }
     }
 
-    private fun serializeTime(time: OffsetTime): String {
-        return time.format(DateTimeFormatter.ISO_OFFSET_TIME)
-    }
-
-    private fun serializeTime(time: OffsetDateTime): String {
-        return time.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-    }
-
-
-    private fun serializeTime(time: Instant): String {
-        return time.toString()
+    private fun toNeo4jType(value: Any?): Any? {
+        return when (value) {
+            null -> null
+            is OffsetTime -> serializeTime(value)
+            is OffsetDateTime -> serializeTime(value)
+            is ZonedDateTime -> serializeTime(value)
+            is Instant -> serializeTime(value)
+            is Enum<*> -> value.name
+            is Collection<*> -> transform(value)
+            else -> value
+        }
     }
 
     private fun transform(list: Collection<*>): Collection<Any?> {
@@ -79,6 +67,22 @@ class NeoQuery(private val driver: Driver) {
                 else -> it
             }
         }
+    }
+
+    private fun serializeTime(time: OffsetTime): String {
+        return time.format(DateTimeFormatter.ISO_OFFSET_TIME)
+    }
+
+    private fun serializeTime(time: OffsetDateTime): String {
+        return time.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+    }
+
+    private fun serializeTime(time: ZonedDateTime): String {
+        return time.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+    }
+
+    private fun serializeTime(time: Instant): String {
+        return time.toString()
     }
 
 }

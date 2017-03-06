@@ -18,6 +18,7 @@ import java.io.File
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.OffsetTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.test.assertEquals
@@ -106,14 +107,16 @@ class NeoQueryTest {
         val params = mapOf(
             "a" to OffsetTime.now(),
             "b" to OffsetDateTime.now(),
-            "c" to Instant.now()
+            "c" to ZonedDateTime.now(),
+            "d" to Instant.now()
         )
 
         val result = subject.serialize(params)
         assertEquals(mapOf(
             "a" to (params["a"] as OffsetTime).format(DateTimeFormatter.ISO_OFFSET_TIME),
             "b" to (params["b"] as OffsetDateTime).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
-            "c" to (params["c"] as Instant).toString()
+            "c" to (params["c"] as ZonedDateTime).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+            "d" to (params["d"] as Instant).toString()
         ), result)
     }
 

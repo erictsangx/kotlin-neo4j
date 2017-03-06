@@ -1,9 +1,10 @@
 package github.etx.neo4j
 
-import kotlin.reflect.memberProperties
+import kotlin.reflect.full.memberProperties
 
-fun Any.destruct(): Map<String, Any?> {
-    return this.javaClass.kotlin.memberProperties.map {
+
+inline fun <reified T : Any> T.destruct(): Map<String, Any?> {
+    return T::class.memberProperties.map {
         it.name to it.get(this)
     }.toMap()
 }
