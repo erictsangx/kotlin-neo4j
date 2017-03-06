@@ -22,7 +22,8 @@ class NeoQuery(private val driver: Driver) {
         val session = driver.session()
 
         return session.use {
-            val statementResult = session.run(query, serialize(parameters))
+            val _parameters = serialize(parameters)
+            val statementResult = session.run(query, _parameters)
             if (statementResult.hasNext()) {
                 CursorWrapper(statementResult.peek(), statementResult)
             } else {
@@ -31,12 +32,12 @@ class NeoQuery(private val driver: Driver) {
         }
     }
 
-    fun serialize(parameters: Map<String, *>): Map<String, *> {
+    fun serialize(parameters: Map<String, Any?>): Map<String, Any?> {
         return parameters.mapValues {
             val value = it.value
             return@mapValues when (value) {
                 is Collection<*> -> transform(value)
-                is Map<*, *> -> serialize(value as Map<String, *>)
+                is Map<*, *> -> serialize(value.mapKeys { it.key.toString() })
                 else -> toNeo4jType(value)
             }
         }
@@ -50,23 +51,20 @@ class NeoQuery(private val driver: Driver) {
             is ZonedDateTime -> serializeTime(value)
             is Instant -> serializeTime(value)
             is Enum<*> -> value.name
-            is Collection<*> -> transform(value)
             else -> value
         }
     }
 
     private fun transform(list: Collection<*>): Collection<Any?> {
-        return list.map {
-            when (it) {
-                null -> null
-                is OffsetTime -> serializeTime(it)
-                is OffsetDateTime -> serializeTime(it)
-                is Instant -> serializeTime(it)
-                is Enum<*> -> it.name
-                else -> it
+        return list.map { value ->
+            return@map when (value) {
+                is Collection<*> -> transform(value)
+                is Map<*, *> -> serialize(value.mapKeys { it.key.toString() })
+                else -> toNeo4jType(value)
             }
         }
     }
+
 
     private fun serializeTime(time: OffsetTime): String {
         return time.format(DateTimeFormatter.ISO_OFFSET_TIME)

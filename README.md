@@ -7,7 +7,7 @@ kotlin-neo4j is a wrapper of 'org.neo4j.driver:neo4j-java-driver' and written by
 
 ## Gradle
 ```gradle
-compile "io.github.erictsangx:kotlin-neo4j:0.0.1"
+compile "io.github.erictsangx:kotlin-neo4j:0.0.3"
 ```
 
 ## Maven
@@ -15,7 +15,7 @@ compile "io.github.erictsangx:kotlin-neo4j:0.0.1"
 <dependency>
   <groupId>io.github.erictsangx</groupId>
   <artifactId>kotlin-neo4j</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.3</version>
 </dependency>
 ```
 ## Examples
@@ -27,7 +27,7 @@ fun main(args: Array<String>) {
       val driver: Driver = GraphDatabase.driver(
           "bolt://127.0.0.1",
           AuthTokens.basic("neo4j", "neo4j")
-          , Config.build().withLogging(NeoLogging(DummyTest.logger)).toConfig())
+          , Config.build().withLogging(NeoLogging(logger)).toConfig())
   
       val neo = NeoQuery(driver)
   
@@ -39,6 +39,14 @@ fun main(args: Array<String>) {
           .map { User(it.string("name"), it.intOrNull("age")) }
           .singleOrNull()
       println(alice) //User(name=Alice, age=18)
+      
+      //or
+      val aliceB = neo.submit("MATCH (u:User { name:{name} }) RETURN u", mapOf("name" to "Alice"))
+           .unwrap("u")
+           .let {
+                User(it.string("name"), it.intOrNull("age"))
+           }
+       println(aliceB) //User(name=Alice, age=18)
   
   
       //You can use with Jackson

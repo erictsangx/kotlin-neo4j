@@ -3,6 +3,7 @@ package github.etx.neo4j
 import com.etx.test.Rand
 import helper.Gender
 import helper.Person
+import helper.person
 import mu.KLogging
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -51,10 +52,10 @@ class NeoQueryTest {
     }
 
 
-    val alice = Person(Rand.str, Rand.int, Gender.FEMALE)
+    val alice = Rand.person
     val aliceKnowBob = Rand.pInstant
-    val bob = Person(Rand.str, Rand.int, Gender.MALE)
-    val candy = Person(Rand.str, Rand.int, Gender.FEMALE)
+    val bob = Rand.person
+    val candy = Rand.person
 
     val insertQuery = """
             CREATE (p:Person {
@@ -93,7 +94,7 @@ class NeoQueryTest {
 
     @Test
     fun submit() {
-        val p = Person(Rand.str, Rand.int, Gender.FEMALE)
+        val p = Rand.person
         val result = subject
             .submit(insertQuery, mapOf("name" to p.name, "age" to p.age, "gender" to p.gender))
             .unwrap("p")
@@ -470,30 +471,33 @@ class NeoQueryTest {
     }
 
 
-//    @Test
-//    fun complexParameter() {
-//        val companyName = Rand.str
-//        val people = (1..10).map { Person(Rand.str) }
-//        subject
-//            .submit("""
-//                    MERGE (c:Company { name: {companyName} })
-//                    WITH c
-//                    UNWIND {people} AS person
-//                    CREATE (c)<-[:WORK]-(p:Person)
-//                    SET p=person
-//                """, mapOf("companyName" to companyName, "people" to people.destruct()))
-//
-//        val result = subject
-//            .submit(
-//                "MATCH (c:Company { name:{companyName} } )<-[:WORK]-(p:Person) RETURN p",
-//                mapOf("companyName" to companyName)
-//            )
-//            .map { it.unwrap("p") }
-//            .map(Cursor::asMap)
-//            .map { Person(it["name"] as String) }
-//            .toList()
-//
-//        assertEquals(people.sortedBy { it.name }, result.sortedBy { it.name })
-//    }
+    @Test
+    fun complexParameter() {
+        val people = (1..10).map { Rand.person }
+
+
+        subject.submit("""
+                    MATCH (a:Person { name: {name} })
+                    WITH a
+                    UNWIND {people} AS person
+                    CREATE (a)-[:KNOW]->(p:Person)
+                    SET p=person
+                """,
+            mapOf("name" to candy.name, "people" to people.destruct()))
+
+        val result = subject
+            .submit(
+                """MATCH (a:Person { name:{name} } )-[:KNOW]->(b:Person)
+                RETURN b
+                ORDER BY b.name
+                """,
+                mapOf("name" to candy.name)
+            )
+            .map { it.unwrap("b") }
+            .map { Person(it.string("name"), it.int("age"), Gender.valueOf(it.string("gender"))) }
+            .toList()
+
+        assertEquals(people.sortedBy { it.name }, result)
+    }
 
 }
