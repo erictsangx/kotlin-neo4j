@@ -1,6 +1,6 @@
 package github.etx.neo4j
 
-import com.etx.test.Rand
+import github.etx.test.Rand
 import helper.person
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals

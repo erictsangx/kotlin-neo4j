@@ -1,6 +1,6 @@
 package github.etx.neo4j
 
-import com.etx.test.Rand
+import github.etx.test.Rand
 import helper.Gender
 import helper.Person
 import helper.person

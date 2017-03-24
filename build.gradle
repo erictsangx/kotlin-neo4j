@@ -1,9 +1,8 @@
 
 buildscript {
-    ext.kotlin_version = '1.1.0'
+    ext.kotlin_version = '1.1.1'
 
     repositories {
-        jcenter()
         mavenCentral()
     }
     dependencies {
@@ -21,20 +20,19 @@ apply plugin: 'signing'
 
 group = 'io.github.erictsangx'
 archivesBaseName = "kotlin-neo4j"
-version = "0.0.3"
+version = "0.0.4"
 
 junitPlatform {
     filters {
         engines {
             include 'junit-jupiter'
         }
-        includeClassNamePatterns '.*Test', '.*IT', '.*Spec'
+        includeClassNamePatterns '.*Test', '.*Spec'
     }
 }
 
 
 repositories {
-    jcenter()
     mavenCentral()
 }
 
@@ -51,7 +49,7 @@ dependencies {
     testCompile("org.junit.jupiter:junit-jupiter-api:5.0.0-M3")
     testRuntime("org.junit.jupiter:junit-jupiter-engine:5.0.0-M3")
 
-    testCompile "com.etx.test:kotlin-random:1.0.0"
+    testCompile "io.github.erictsangx:kotlin-random:0.0.1"
 
     testCompile 'io.github.microutils:kotlin-logging:1.4'
     testCompile group: 'ch.qos.logback', name: 'logback-core', version: '1.1.7'

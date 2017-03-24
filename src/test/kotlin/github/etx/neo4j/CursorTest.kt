@@ -1,6 +1,6 @@
 package github.etx.neo4j
 
-import com.etx.test.Rand
+import github.etx.test.Rand
 import org.junit.jupiter.api.Test
 import org.neo4j.driver.internal.InternalNode
 import org.neo4j.driver.internal.InternalRelationship

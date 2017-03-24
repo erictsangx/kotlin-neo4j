@@ -1,6 +1,6 @@
 package helper
 
-import com.etx.test.Rand
+import github.etx.test.Rand
 
 
 val Rand.gender: Gender
