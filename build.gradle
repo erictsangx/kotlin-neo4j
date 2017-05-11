@@ -1,13 +1,12 @@
-
 buildscript {
-    ext.kotlin_version = '1.1.1'
+    ext.kotlin_version = '1.1.2'
 
     repositories {
         mavenCentral()
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath group: 'org.junit.platform', name: 'junit-platform-gradle-plugin', version: '1.0.0-M3'
+        classpath group: 'org.junit.platform', name: 'junit-platform-gradle-plugin', version: '1.0.0-M4'
     }
 }
 
@@ -20,13 +19,10 @@ apply plugin: 'signing'
 
 group = 'io.github.erictsangx'
 archivesBaseName = "kotlin-neo4j"
-version = "0.0.4"
+version = "0.0.5"
 
 junitPlatform {
     filters {
-        engines {
-            include 'junit-jupiter'
-        }
         includeClassNamePatterns '.*Test', '.*Spec'
     }
 }
@@ -46,8 +42,8 @@ dependencies {
 
     //junit5
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
-    testCompile("org.junit.jupiter:junit-jupiter-api:5.0.0-M3")
-    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.0.0-M3")
+    testCompile("org.junit.jupiter:junit-jupiter-api:5.0.0-M4")
+    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.0.0-M4")
 
     testCompile "io.github.erictsangx:kotlin-random:0.0.1"
 
@@ -93,7 +89,7 @@ uploadArchives {
             }
 
             pom.project {
-                name  "${project.group}:${project.archivesBaseName}"
+                name "${project.group}:${project.archivesBaseName}"
                 packaging 'jar'
                 description "kotlin-neo4j is a wrapper of 'org.neo4j.driver:neo4j-java-driver' and written by Kotlin."
                 url "https://github.com/erictsangx/kotlin-neo4j"
