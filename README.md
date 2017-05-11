@@ -8,7 +8,7 @@ kotlin-neo4j is a wrapper of 'org.neo4j.driver:neo4j-java-driver' and written by
 
 ## Gradle
 ```gradle
-compile "io.github.erictsangx:kotlin-neo4j:0.0.3"
+compile "io.github.erictsangx:kotlin-neo4j:0.0.5"
 ```
 
 ## Maven
@@ -16,7 +16,7 @@ compile "io.github.erictsangx:kotlin-neo4j:0.0.3"
 <dependency>
   <groupId>io.github.erictsangx</groupId>
   <artifactId>kotlin-neo4j</artifactId>
-  <version>0.0.3</version>
+  <version>0.0.5</version>
 </dependency>
 ```
 ## Examples
@@ -29,8 +29,8 @@ fun main(args: Array<String>) {
           "bolt://127.0.0.1",
           AuthTokens.basic("neo4j", "neo4j")
           , Config.build().withLogging(NeoLogging(logger)).toConfig())
-  
-      val neo = NeoQuery(driver)
+   
+      val neo = NeoQuery(driver, DefaultNeoSerializer())
   
       neo.submit("CREATE (u:User { name: {name}, age: {age} })", User("Alice", 18).destruct())
       neo.submit("CREATE (u:User { name: {name}, age: {age} })", User("Bob", null).destruct())
