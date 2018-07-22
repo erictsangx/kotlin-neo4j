@@ -1,5 +1,15 @@
 buildscript {
-    ext.kotlin_version = '1.1.2'
+    ext {
+        jackson_kotlin_version = '2.9.6'
+        jupiter_version = '5.0.0-M4'
+        kotlin_version = '1.2.51'
+        kotlin_loggin_version = '1.5.4'
+        kotlin_random_version = '0.0.1'
+        logback_version = '1.2.3'
+        neo4j_version = '3.4.4'
+        neo4j_driver_version = '1.6.2'
+        sl4j_version = '1.7.21'
+    }
 
     repositories {
         mavenCentral()
@@ -14,12 +24,12 @@ apply plugin: 'idea'
 apply plugin: 'kotlin'
 apply plugin: 'org.junit.platform.gradle.plugin'
 
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
 group = 'io.github.erictsangx'
 archivesBaseName = "kotlin-neo4j"
-version = "0.0.5"
+version = "0.0.6-SNAPSHOT"
 
 junitPlatform {
     filters {
@@ -27,33 +37,32 @@ junitPlatform {
     }
 }
 
-
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
-    compile 'org.slf4j:slf4j-api:1.7.21'
+    compile "org.slf4j:slf4j-api:$sl4j_version"
 
     //neo4j
-    compile 'org.neo4j.driver:neo4j-java-driver:1.1.1'
+    compile "org.neo4j.driver:neo4j-java-driver:$neo4j_driver_version"
 
     //junit5
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
-    testCompile("org.junit.jupiter:junit-jupiter-api:5.0.0-M4")
-    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.0.0-M4")
+    testCompile("org.junit.jupiter:junit-jupiter-api:$jupiter_version")
+    testRuntime("org.junit.jupiter:junit-jupiter-engine:$jupiter_version")
 
-    testCompile "io.github.erictsangx:kotlin-random:0.0.1"
+    testCompile "io.github.erictsangx:kotlin-random:$kotlin_random_version"
 
-    testCompile 'io.github.microutils:kotlin-logging:1.4'
-    testCompile group: 'ch.qos.logback', name: 'logback-core', version: '1.1.7'
-    testCompile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.7'
-    testCompile "org.neo4j:neo4j-slf4j:3.1.0"
-    testCompile "org.neo4j.test:neo4j-harness:3.1.0"
+    testCompile "io.github.microutils:kotlin-logging:$kotlin_loggin_version"
+    testCompile "ch.qos.logback:logback-core:$logback_version"
+    testCompile "ch.qos.logback:logback-classic:$logback_version"
+    testCompile "org.neo4j:neo4j-slf4j:$neo4j_version"
+    testCompile "org.neo4j.test:neo4j-harness:$neo4j_version"
 
-    testCompile "com.fasterxml.jackson.module:jackson-module-kotlin:2.8.4"
+    testCompile "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_kotlin_version"
 }
 
 task javadocJar(type: Jar) {
