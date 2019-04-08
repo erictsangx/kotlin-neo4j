@@ -102,6 +102,7 @@ uploadArchives {
 
             pom.project {
                 name "${project.group}:${project.archivesBaseName}"
+                packaging 'jar'
                 description "kotlin-neo4j is a wrapper of 'org.neo4j.driver:neo4j-java-driver' and written by Kotlin."
                 url "https://github.com/erictsangx/kotlin-neo4j"
 
