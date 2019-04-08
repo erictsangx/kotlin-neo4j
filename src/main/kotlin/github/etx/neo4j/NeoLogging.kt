@@ -10,6 +10,9 @@ class NeoLogging(private val logger: org.slf4j.Logger) : Logging {
     }
 
     private val neoLogger = object : Logger {
+        override fun warn(message: String?, cause: Throwable?) {
+            logger.warn(message, cause)
+        }
 
         override fun trace(message: String?, vararg params: Any?) {
             logger.trace(message, params)

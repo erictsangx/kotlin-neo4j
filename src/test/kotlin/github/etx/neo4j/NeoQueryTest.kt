@@ -5,13 +5,14 @@ import helper.Gender
 import helper.Person
 import helper.person
 import mu.KLogging
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.neo4j.driver.v1.AuthTokens
 import org.neo4j.driver.v1.Config
 import org.neo4j.driver.v1.Driver
 import org.neo4j.driver.v1.GraphDatabase
-import org.neo4j.graphdb.factory.GraphDatabaseSettings
+import org.neo4j.kernel.configuration.BoltConnector
 import org.neo4j.logging.slf4j.Slf4jLogProvider
 import org.neo4j.test.TestGraphDatabaseFactory
 import java.io.File
@@ -23,10 +24,25 @@ import kotlin.test.assertTrue
 
 class NeoQueryTest {
 
-    companion object : KLogging()
+    companion object : KLogging() {
+        val key = Rand.str
+        val port = Rand.int(40000, 60000)
 
-    val key = Rand.str
-    val port = Rand.int(40000, 60000)
+        @BeforeAll
+        @JvmStatic
+        fun setup() {
+            TestGraphDatabaseFactory()
+                    .setUserLogProvider(Slf4jLogProvider())
+                    .newEmbeddedDatabaseBuilder(File("/tmp/neo-${UUID.randomUUID()}"))
+                    .loadPropertiesFromFile(NeoQueryTest::class.java.classLoader.getResource("neo4j.conf").file)
+                    .setConfig(BoltConnector(key).type, "BOLT")
+                    .setConfig(BoltConnector(key).enabled, "true")
+                    .setConfig(BoltConnector(key).encryption_level, "OPTIONAL")
+                    .setConfig(BoltConnector(key).listen_address, "0.0.0.0:$port")
+                    .newGraphDatabase()
+        }
+
+    }
 
     val driver: Driver = GraphDatabase.driver(
             "bolt://127.0.0.1:$port",
@@ -34,19 +50,6 @@ class NeoQueryTest {
             , Config.build().withLogging(NeoLogging(logger)).toConfig())
     val serializer = DefaultNeoSerializer()
     val subject: NeoQuery = NeoQuery(driver, serializer)
-
-
-    init {
-        TestGraphDatabaseFactory()
-                .setUserLogProvider(Slf4jLogProvider())
-                .newEmbeddedDatabaseBuilder(File("/tmp/neo-${UUID.randomUUID()}"))
-                .loadPropertiesFromFile(NeoQueryTest::class.java.classLoader.getResource("neo4j.conf").file)
-                .setConfig(GraphDatabaseSettings.boltConnector(key).type, "BOLT")
-                .setConfig(GraphDatabaseSettings.boltConnector(key).enabled, "true")
-                .setConfig(GraphDatabaseSettings.boltConnector(key).encryption_level, "OPTIONAL")
-                .setConfig(GraphDatabaseSettings.boltConnector(key).address, "0.0.0.0:$port")
-                .newGraphDatabase()
-    }
 
 
     val alice = Rand.person

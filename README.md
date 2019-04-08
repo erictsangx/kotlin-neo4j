@@ -8,7 +8,7 @@ kotlin-neo4j is a wrapper of 'org.neo4j.driver:neo4j-java-driver' and written by
 
 ## Gradle
 ```gradle
-compile "io.github.erictsangx:kotlin-neo4j:0.0.5"
+compile "io.github.erictsangx:kotlin-neo4j:0.0.6"
 ```
 
 ## Maven
@@ -16,7 +16,7 @@ compile "io.github.erictsangx:kotlin-neo4j:0.0.5"
 <dependency>
   <groupId>io.github.erictsangx</groupId>
   <artifactId>kotlin-neo4j</artifactId>
-  <version>0.0.5</version>
+  <version>0.0.6</version>
 </dependency>
 ```
 ## Examples
